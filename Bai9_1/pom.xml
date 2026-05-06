@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ╔══════════════════════════════════════════════════════════════════════════╗
+  ║  UPGRADED pom.xml  –  migrated from legacy maven-lab-01 pom            ║
+  ║                                                                          ║
+  ║  Changes vs. legacy:                                                     ║
+  ║    • Java 1.8  →  17  (Hibernate 6 requires ≥ 11)                       ║
+  ║    • junit:junit:4.10 REMOVED → junit-jupiter:5.9.2 ADDED               ║
+  ║    • Logback Classic 1.4.11 + SLF4J 2.0.9 ADDED                        ║
+  ║    • Hibernate Core 6.2.0.Final ADDED                                    ║
+  ║    • guava 18.0 → 32.1.2-jre  (CVE fixes + Java 11 compat)             ║
+  ║    • commons-lang3 3.1 → 3.13.0  (bug fixes)                           ║
+  ║    • jackson-databind 2.5.0 → 2.15.2  (critical CVE fixes)             ║
+  ║    • mysql-connector-java 5.1.30 → 8.0.33 (jakarta compat)             ║
+  ║    • maven-compiler-plugin 3.1 → 3.11.0                                 ║
+  ║    • maven-surefire-plugin added at 3.1.2 (needed for JUnit 5)          ║
+  ╚══════════════════════════════════════════════════════════════════════════╝
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ===== Project Coordinates (unchanged from legacy) ===== -->
+    <groupId>com.practice.maven</groupId>
+    <artifactId>maven-lab-01</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>MathUtils (maven-lab-01)</name>
+    <description>MathUtils – legacy pom upgraded for Logback, Hibernate, JUnit 5</description>
+
+    <!-- ===== Properties ===== -->
+    <properties>
+        <!--
+            UPGRADE: Java 1.8 → 17.
+            Reason: Hibernate 6.x requires Java 11 minimum.
+                    Java 17 is the current LTS and fully backward-compatible.
+        -->
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- ── Version properties (single source of truth) ── -->
+        <!-- NEW additions -->
+        <logback.version>1.4.11</logback.version>
+        <slf4j.version>2.0.9</slf4j.version>
+        <hibernate.version>6.2.0.Final</hibernate.version>
+        <junit.jupiter.version>5.9.2</junit.jupiter.version>
+        <maven.surefire.version>3.1.2</maven.surefire.version>
+
+        <!-- Legacy deps – versions bumped for compatibility & security -->
+        <guava.version>32.1.2-jre</guava.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
+        <jackson.version>2.15.2</jackson.version>
+        <mysql.version>8.0.33</mysql.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- ============================================================ -->
+        <!--  [LEGACY – KEPT] Google Guava                                -->
+        <!--                                                               -->
+        <!--  Legacy version: 18.0                                         -->
+        <!--  Conflict: Guava 18 does not support Java 9+ module system   -->
+        <!--            and has known CVEs. Bumped to 32.1.2-jre          -->
+        <!--            ("-jre" suffix = Java 8+ compatible variant).     -->
+        <!-- ============================================================ -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+
+        <!-- ============================================================ -->
+        <!--  [LEGACY – KEPT] Apache Commons Lang 3                       -->
+        <!--                                                               -->
+        <!--  Legacy version: 3.1                                          -->
+        <!--  Bumped to 3.13.0 – fully backward-compatible API,           -->
+        <!--  fixes several bugs present in 3.1.                           -->
+        <!-- ============================================================ -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+
+        <!-- ============================================================ -->
+        <!--  [LEGACY – UPGRADED] Jackson Databind                        -->
+        <!--                                                               -->
+        <!--  Legacy version: 2.5.0                                        -->
+        <!--  Conflict #1 – Critical CVEs (CVE-2019-14379, etc.) in       -->
+        <!--                2.5.x; must upgrade.                           -->
+        <!--  Conflict #2 – Jackson 2.5.x pulls in slf4j-api 1.x via     -->
+        <!--                jackson-dataformat-xml (transitive), which     -->
+        <!--                clashes with our required SLF4J 2.x.          -->
+        <!--  Solution: bump to 2.15.2; pin slf4j-api 2.0.9 in           -->
+        <!--            <dependencyManagement> to override any 1.x        -->
+        <!--            pulled transitively.                               -->
+        <!-- ============================================================ -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- ============================================================ -->
+        <!--  [LEGACY – UPGRADED] MySQL Connector/J                       -->
+        <!--                                                               -->
+        <!--  Legacy version: 5.1.30                                       -->
+        <!--  Conflict #3 – MySQL 5.1.x uses the legacy groupId           -->
+        <!--                "mysql:mysql-connector-java" and the           -->
+        <!--                old "com.mysql.jdbc.*" driver class, which    -->
+        <!--                is incompatible with Hibernate 6 (jakarta.*). -->
+        <!--  Conflict #4 – 5.1.30 pulls in javax.xml.bind:jaxb-api,    -->
+        <!--                clashing with Hibernate 6's jakarta namespace. -->
+        <!--  Solution: upgrade to 8.0.33 (new driver class              -->
+        <!--            "com.mysql.cj.jdbc.Driver", jakarta-safe) and     -->
+        <!--            exclude any stray javax.xml.bind from it.         -->
+        <!-- ============================================================ -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- ============================================================ -->
+        <!--  [NEW] Logging: SLF4J API + Logback Classic 1.4.11           -->
+        <!--                                                               -->
+        <!--  Replaces all System.out.println with structured logging.    -->
+        <!--  Logback 1.4.x requires SLF4J 2.x – we pin it explicitly.  -->
+        <!-- ============================================================ -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+
+        <!-- ============================================================ -->
+        <!--  [NEW] ORM: Hibernate Core 6.2.0.Final                       -->
+        <!--                                                               -->
+        <!--  Conflict #5 – Hibernate pulls slf4j-api 2.0.7;             -->
+        <!--                our <dependencyManagement> pin (2.0.9) wins.  -->
+        <!--  Conflict #6 – Hibernate pulls byte-buddy 1.12.x;           -->
+        <!--                pinned below at 1.14.9 to avoid split-class.  -->
+        <!--  Conflict #7 – javax.xml.bind:jaxb-api excluded to prevent  -->
+        <!--                classpath clash with jakarta.* namespace.      -->
+        <!-- ============================================================ -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+            <exclusions>
+                <!-- Conflict #7: exclude old javax JAXB (Hibernate 6 uses jakarta) -->
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+                <!-- Prevent any stray JUnit 4 from Hibernate test-infra -->
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Conflict #6 fix: pin byte-buddy to avoid mixed versions -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.14.9</version>
+        </dependency>
+
+        <!-- ============================================================ -->
+        <!--  [REPLACED] Testing: JUnit Jupiter 5.9.2                     -->
+        <!--                                                               -->
+        <!--  Conflict #8 – Legacy used junit:junit:4.10 (JUnit 4).      -->
+        <!--                JUnit 4 and JUnit 5 cannot share the test     -->
+        <!--                runner without the vintage bridge; since the  -->
+        <!--                task requires Jupiter as the ONLY engine,     -->
+        <!--                junit:junit is fully removed.                  -->
+        <!--  Action: delete junit:junit:4.10 entry, add junit-jupiter.   -->
+        <!--  Surefire 3.x (configured below) is required because         -->
+        <!--  Surefire 2.x cannot discover JUnit 5 @Test annotations.    -->
+        <!-- ============================================================ -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ================================================================ -->
+    <!--  Build Plugins                                                    -->
+    <!-- ================================================================ -->
+    <build>
+        <plugins>
+
+            <!--
+                UPGRADE: maven-compiler-plugin 3.1 → 3.11.0
+                Reason:  3.1 does not fully support Java 17 features.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+
+            <!--
+                NEW: maven-surefire-plugin 3.1.2
+                Required to execute JUnit Jupiter tests.
+                Surefire 2.x (Maven default) silently skips JUnit 5 tests,
+                reporting 0 tests run – adding this plugin is the fix.
+                useModulePath=false avoids JPMS complications.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.version}</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
+            </plugin>
+
+            <!-- JAR manifest: set main class -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.example.MathUtils</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <!-- ================================================================ -->
+    <!--  Dependency Management                                            -->
+    <!--  Acts as a BOM: forces specific versions to win over all         -->
+    <!--  transitive versions pulled by Hibernate, Jackson, Guava, etc.  -->
+    <!-- ================================================================ -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!--
+                Force SLF4J 2.0.9 project-wide.
+                Without this, Hibernate's transitive slf4j-api 2.0.7 would
+                coexist with Logback's requirement for 2.x, causing subtle
+                runtime mismatches.
+            -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+
+            <!--
+                Force byte-buddy 1.14.9 project-wide.
+                Hibernate 6.2 pulls 1.12.x; Guava or Mockito (if added later)
+                may pull a different patch. Pinning here prevents split-package.
+            -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.14.9</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+</project>
