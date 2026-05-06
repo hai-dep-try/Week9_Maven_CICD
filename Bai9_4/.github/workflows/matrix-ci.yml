@@ -1,0 +1,154 @@
+# ============================================================
+# matrix-ci.yml – Multi-OS Matrix Strategy CI
+#
+# Solves "It works on my machine" by running tests on:
+#   - ubuntu-latest  (Linux  / File.separator = '/')
+#   - windows-latest (Windows / File.separator = '\')
+#   - macos-latest   (macOS  / File.separator = '/')
+#
+# Triggers: push to any branch, PR targeting main
+# ============================================================
+
+name: Matrix CI – Multi-OS Testing
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Matrix job: runs build+test on 3 OS × 2 Java versions = 6 runners
+  # ──────────────────────────────────────────────────────────
+  test-matrix:
+    name: "Test on ${{ matrix.os }} / Java ${{ matrix.java }}"
+    runs-on: ${{ matrix.os }}
+
+    # ── Matrix Strategy ────────────────────────────────────
+    strategy:
+      # fail-fast: false → continue running other matrix cells
+      # even when one OS fails. This lets you SEE which OSes
+      # pass and which fail in a single pipeline run.
+      fail-fast: false
+
+      matrix:
+        os:   [ ubuntu-latest, windows-latest, macos-latest ]
+        java: [ 17, 21 ]
+
+        # `include` adds extra variables to specific matrix cells.
+        # Here we label each OS for the job summary report.
+        include:
+          - os: ubuntu-latest
+            os-label: "Linux (Ubuntu)"
+            separator: "/"
+          - os: windows-latest
+            os-label: "Windows"
+            separator: '\\'
+          - os: macos-latest
+            os-label: "macOS"
+            separator: "/"
+
+    # All `run` steps use Bai9_4/ as working directory.
+    # On Windows, GitHub Actions accepts both / and \ in `working-directory`.
+    defaults:
+      run:
+        working-directory: Bai9_4
+
+    steps:
+      # ── Step 1: Checkout ────────────────────────────────
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # ── Step 2: Setup JDK ───────────────────────────────
+      - name: "Set up JDK ${{ matrix.java }} (Temurin)"
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # ── Step 3: Print OS info ───────────────────────────
+      # This step shows the separator difference between runners.
+      - name: Print OS and Java environment
+        shell: bash       # force bash on Windows too (Git Bash / MSYS)
+        run: |
+          echo "================================================"
+          echo "  OS           : ${{ matrix.os-label }}"
+          echo "  Java version : ${{ matrix.java }}"
+          echo "  Runner OS    : $RUNNER_OS"
+          echo "  Expected sep : ${{ matrix.separator }}"
+          echo "================================================"
+          java -version
+          mvn -version
+
+      # ── Step 4: Compile ─────────────────────────────────
+      - name: Compile
+        run: mvn compile -B
+
+      # ── Step 5: Run all tests ───────────────────────────
+      # MathUtilsTest  – pure logic, always passes on all OSes
+      # FileUtilsTest  – path tests using java.nio.file.Path (cross-platform)
+      - name: "Run tests (mvn test)"
+        run: mvn test -B
+
+      # ── Step 6: Upload Surefire reports ─────────────────
+      # Named per matrix cell so all 6 reports are preserved separately.
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "surefire-${{ matrix.os }}-java${{ matrix.java }}"
+          path: Bai9_4/target/surefire-reports/
+          retention-days: 7
+
+      # ── Step 7: Package JAR ──────────────────────────────
+      - name: Package JAR
+        run: mvn package -B -DskipTests
+
+      # ── Step 8: Upload JAR per OS ───────────────────────
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "MathUtils-Matrix-${{ matrix.os }}-java${{ matrix.java }}"
+          path: Bai9_4/target/MathUtils-Matrix.jar
+          retention-days: 14
+          if-no-files-found: error
+
+      # ── Step 9: Job summary ──────────────────────────────
+      - name: Write job summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## ${{ matrix.os-label }} / Java ${{ matrix.java }}" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| OS | \`${{ matrix.os-label }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Java | \`${{ matrix.java }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Expected separator | \`${{ matrix.separator }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+
+  # ──────────────────────────────────────────────────────────
+  # Summary job: runs AFTER all matrix cells complete
+  # ──────────────────────────────────────────────────────────
+  report:
+    name: "Matrix Report"
+    runs-on: ubuntu-latest
+    needs: test-matrix           # wait for all 6 runners to finish
+    if: always()                 # run even if some matrix cells failed
+
+    steps:
+      - name: Print matrix result
+        run: |
+          echo "===== Matrix CI Complete ====="
+          echo "All 6 runners finished (3 OS × 2 Java)"
+          echo "Result: ${{ needs.test-matrix.result }}"
+          if [ "${{ needs.test-matrix.result }}" = "success" ]; then
+            echo "ALL MATRIX CELLS PASSED"
+          else
+            echo "SOME MATRIX CELLS FAILED – check individual runner logs"
+          fi

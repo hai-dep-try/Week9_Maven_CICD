@@ -1,0 +1,119 @@
+# ============================================================
+# path-fail-demo.yml – Demonstrates cross-OS path test failure
+#
+# Trigger: MANUAL (workflow_dispatch) only
+# Purpose: Educational – shows what happens when you hardcode
+#          path separators instead of using File.separator / Path API
+# ============================================================
+
+name: "[DEMO] Path Failure on Wrong OS"
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_os:
+        description: "Which OS to run the broken test on?"
+        required: true
+        default: ubuntu-latest
+        type: choice
+        options:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+jobs:
+  broken-path-demo:
+    name: "Broken path test on ${{ inputs.target_os }}"
+    runs-on: ${{ inputs.target_os }}
+
+    defaults:
+      run:
+        working-directory: Bai9_4
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # ── Inject a hardcoded Windows backslash path ──────
+      - name: "[DEMO] Inject broken Windows-style hardcoded path"
+        shell: bash
+        run: |
+          echo ">>> Injecting broken test that uses hardcoded backslash..."
+          cat >> src/test/java/com/example/FileUtilsTest.java << 'ENDOFTEST'
+
+          // !! DEMO ONLY – this class is appended at runtime by CI demo !!
+          // Simulates a developer who hardcoded the path on Windows and
+          // pushed without testing on Linux/macOS.
+          class BrokenPathDemoTest {
+              @org.junit.jupiter.api.Test
+              @org.junit.jupiter.api.DisplayName("[BROKEN] Hardcoded backslash path")
+              void brokenHardcodedWindowsPath() {
+                  // A developer wrote this on Windows and it passed locally.
+                  // Backslash is the path separator on Windows.
+                  // On Linux/macOS, backslash is a VALID CHARACTER in a filename,
+                  // so Paths.get() treats the whole string as ONE filename component.
+                  String windowsHardcoded = "data\\config\\app.properties";
+                  java.nio.file.Path p = java.nio.file.Paths.get(windowsHardcoded);
+
+                  // On Windows:  nameCount = 3 (passes locally)
+                  // On Linux  :  nameCount = 1 (FAILS! backslash is not a separator)
+                  // On macOS  :  nameCount = 1 (FAILS! same reason as Linux)
+                  org.junit.jupiter.api.Assertions.assertEquals(3, p.getNameCount(),
+                      "BROKEN: hardcoded backslash only works on Windows!\n"
+                    + "  Actual nameCount on this OS = " + p.getNameCount()
+                    + "\n  Path string = '" + p + "'"
+                    + "\n  File.separator = '" + java.io.File.separator + "'");
+              }
+          }
+          ENDOFTEST
+          echo ">>> Injection complete. Next step WILL FAIL on Linux/macOS."
+
+      # ── Compile (may fail due to injection syntax) ──────
+      - name: Compile with injected broken test
+        run: mvn test-compile -B
+        continue-on-error: true   # proceed to test step even if compile has issues
+
+      # ── Run tests – EXPECT FAILURE on Linux/macOS ───────
+      - name: "[DEMO] Run tests – observe cross-OS failure"
+        id: run_tests
+        run: mvn test -B
+        # Expected outcome:
+        #   Windows  → PASSES (backslash IS the separator)
+        #   Linux    → FAILS  (nameCount=1, expected 3)
+        #   macOS    → FAILS  (nameCount=1, expected 3)
+
+      # ── Always upload reports for post-mortem ───────────
+      - name: Upload failure reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "broken-path-reports-${{ inputs.target_os }}"
+          path: Bai9_4/target/surefire-reports/
+          retention-days: 3
+
+      # ── Show the fix ────────────────────────────────────
+      - name: "[DEBUG] Explain the fix"
+        if: always()
+        shell: bash
+        run: |
+          SEP=$(java -XshowSettings:all -version 2>&1 | grep "file.separator" | awk '{print $NF}' || echo "unknown")
+          echo "================================================"
+          echo "  OS: $RUNNER_OS"
+          echo "  File.separator: '$SEP'"
+          echo "================================================"
+          echo ""
+          echo "BROKEN (hardcoded backslash – Windows only):"
+          echo "  String path = \"data\\\\config\\\\app.properties\";"
+          echo "  Paths.get(path).getNameCount() on Linux = 1  (FAILS)"
+          echo ""
+          echo "FIXED (portable Path API):"
+          echo "  Path path = Paths.get(\"data\", \"config\", \"app.properties\");"
+          echo "  path.getNameCount() on ANY OS = 3  (PASSES)"
+          echo ""
+          echo "KEY RULE: Never hardcode \\ or / in path strings."
+          echo "  Use: Paths.get(first, more...)  OR  File.separator constant"
