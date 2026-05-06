@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>MathUtils-Coverage</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>MathUtils-Coverage</name>
+    <description>JaCoCo 80% coverage enforcement – Week 9 Bai 5</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <slf4j.version>2.0.9</slf4j.version>
+        <logback.version>1.4.11</logback.version>
+        <junit.version>5.9.2</junit.version>
+        <surefire.version>3.1.2</surefire.version>
+        <jacoco.version>0.8.11</jacoco.version>
+        <!-- Coverage threshold: build fails if any metric drops below 80% -->
+        <jacoco.minimum.coverage>0.80</jacoco.minimum.coverage>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compiler -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- Surefire 3.x: required for JUnit Jupiter -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
+            </plugin>
+
+            <!-- JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <finalName>MathUtils-Coverage</finalName>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.example.MathUtils</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!--
+                ╔══════════════════════════════════════════════════════════╗
+                ║  JaCoCo Maven Plugin 0.8.11                              ║
+                ║                                                          ║
+                ║  Execution 1 – prepare-agent (phase: initialize)        ║
+                ║    Injects the JaCoCo Java agent into Surefire's JVM.   ║
+                ║    The agent records which bytecode lines/branches       ║
+                ║    are executed during the test run.                     ║
+                ║                                                          ║
+                ║  Execution 2 – report (phase: verify)                   ║
+                ║    Reads the raw .exec binary data and generates         ║
+                ║    HTML/XML/CSV reports under target/site/jacoco/.       ║
+                ║                                                          ║
+                ║  Execution 3 – check (phase: verify, after report)      ║
+                ║    Enforces the 80% INSTRUCTION coverage rule.           ║
+                ║    Build FAILS with non-zero exit code if violated.      ║
+                ╚══════════════════════════════════════════════════════════╝
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+
+                    <!-- 1. Attach the JaCoCo agent before tests run -->
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+
+                    <!-- 2. Generate HTML/XML report after tests complete -->
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <!-- Report goes to: target/site/jacoco/index.html -->
+                    </execution>
+
+                    <!-- 3. Enforce minimum 80% coverage or FAIL the build -->
+                    <execution>
+                        <id>jacoco-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <!--
+                                        Element: BUNDLE = the entire project as a whole.
+                                        Other options: PACKAGE, CLASS, METHOD.
+                                        BUNDLE is the strictest top-level gate.
+                                    -->
+                                    <element>BUNDLE</element>
+                                    <limits>
+
+                                        <!--
+                                            INSTRUCTION coverage >= 80%.
+                                            "Instructions" = individual JVM bytecode instructions.
+                                            This is the most fine-grained metric.
+                                        -->
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.minimum.coverage}</minimum>
+                                        </limit>
+
+                                        <!--
+                                            BRANCH coverage >= 80%.
+                                            Ensures if/else, switch, ternary branches
+                                            are exercised by tests.
+                                        -->
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.minimum.coverage}</minimum>
+                                        </limit>
+
+                                        <!--
+                                            LINE coverage >= 80%.
+                                            Every source line must be touched by at least one test.
+                                        -->
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.minimum.coverage}</minimum>
+                                        </limit>
+
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <!-- Fail the build (not just warn) when rule is violated -->
+                            <haltOnFailure>true</haltOnFailure>
+                        </configuration>
+                    </execution>
+
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,128 @@
+# ============================================================
+# coverage-ci.yml – JaCoCo Coverage Enforcement CI
+#
+# Runs `mvn verify` which executes:
+#   1. compile
+#   2. test       (with JaCoCo agent recording coverage)
+#   3. jacoco:report  → generates target/site/jacoco/index.html
+#   4. jacoco:check   → FAILS if INSTRUCTION/BRANCH/LINE < 80%
+#
+# Artifacts saved:
+#   - jacoco-coverage-report  (HTML/XML report)
+#   - surefire-reports        (test result XMLs)
+#
+# Triggers: push to any branch, PR targeting main
+# ============================================================
+
+name: Coverage CI (JaCoCo 80%)
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-coverage:
+    name: Build, Test & Enforce 80% Coverage
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Bai9_5
+
+    steps:
+      # ── Step 1: Checkout ────────────────────────────────
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # ── Step 2: Set up JDK 17 ───────────────────────────
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # ── Step 3: Run full Maven verify lifecycle ──────────
+      # Phases executed: validate → compile → test → package → verify
+      # JaCoCo binds to:
+      #   initialize  → prepare-agent  (attach JVM agent before tests)
+      #   verify      → report         (generate HTML/XML report)
+      #   verify      → check          (fail if coverage < 80%)
+      - name: "mvn verify (compile + test + jacoco report + 80% check)"
+        run: mvn verify -B
+        # If coverage drops below 80%, JaCoCo prints:
+        #   [ERROR] Rule violated: instructions covered ratio is 0.73,
+        #           but expected minimum is 0.80
+        # And Maven exits with code 1 → job fails → PR cannot be merged.
+
+      # ── Step 4: Upload JaCoCo HTML report ───────────────
+      # Always upload so we can VIEW coverage even on failure.
+      - name: Upload JaCoCo coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          # The full report is at target/site/jacoco/
+          # Open index.html in a browser to see line-by-line coverage.
+          path: Bai9_5/target/site/jacoco/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── Step 5: Upload Surefire test results ────────────
+      - name: Upload Surefire test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: Bai9_5/target/surefire-reports/
+          retention-days: 7
+
+      # ── Step 6: Upload JAR ───────────────────────────────
+      - name: Upload JAR artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MathUtils-Coverage-jar
+          path: Bai9_5/target/MathUtils-Coverage.jar
+          retention-days: 14
+          if-no-files-found: error
+
+      # ── Step 7: Print coverage summary to job log ───────
+      - name: Print coverage summary
+        if: always()
+        run: |
+          REPORT=target/site/jacoco/index.html
+          if [ -f "$REPORT" ]; then
+            echo "===== JaCoCo Report generated ====="
+            echo "  Path: Bai9_5/$REPORT"
+            echo "  Download 'jacoco-coverage-report' artifact to view HTML."
+            # Extract total coverage from jacoco XML (if available)
+            XML=target/site/jacoco/jacoco.xml
+            if [ -f "$XML" ]; then
+              INSTR=$(grep -o 'type="INSTRUCTION"[^/]*/>' "$XML" | tail -1 \
+                      | grep -o 'covered="[0-9]*"' | head -1 | tr -d 'covered="')
+              MISSED=$(grep -o 'type="INSTRUCTION"[^/]*/>' "$XML" | tail -1 \
+                       | grep -o 'missed="[0-9]*"' | head -1 | tr -d 'missed="')
+              echo "  Instruction coverage raw: covered=$INSTR missed=$MISSED"
+            fi
+          else
+            echo "  WARNING: JaCoCo report not found – verify phase may have failed."
+          fi
+
+      # ── Step 8: Job summary ──────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## JaCoCo Coverage CI" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Threshold | 80% (INSTRUCTION + BRANCH + LINE) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Report | Download \`jacoco-coverage-report\` artifact |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
