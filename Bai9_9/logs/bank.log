@@ -1,0 +1,118 @@
+2026-05-07 13:24:36.480 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.582 INFO  [main] com.example.bank.BankAccount - Account created: accountId=82006283, holder=Alice
+2026-05-07 13:24:36.585 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=82006283, balance=1000.0
+2026-05-07 13:24:36.586 INFO  [main] com.example.bank.BankAccount - Account created: accountId=B24C95AA, holder=Bob
+2026-05-07 13:24:36.587 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=B24C95AA, balance=200.0
+2026-05-07 13:24:36.592 DEBUG [main] com.example.bank.Transaction - Transaction created: id=TX-8FBE7F, type=DEPOSIT, amount=100.0
+2026-05-07 13:24:36.593 INFO  [main] com.example.bank.BankAccount - Deposit OK: accountId=82006283, amount=100.0, newBalance=1100.0
+2026-05-07 13:24:36.593 DEBUG [main] com.example.bank.BankAccount - Transaction recorded: [TX-8FBE7F] DEPOSIT      100.00  Deposit by Alice @ 2026-05-07T13:24:36.592270700
+2026-05-07 13:24:36.637 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.638 INFO  [main] com.example.bank.BankAccount - Account created: accountId=E305B7F8, holder=Alice
+2026-05-07 13:24:36.639 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=E305B7F8, balance=1000.0
+2026-05-07 13:24:36.639 INFO  [main] com.example.bank.BankAccount - Account created: accountId=C4AFCADC, holder=Bob
+2026-05-07 13:24:36.639 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=C4AFCADC, balance=200.0
+2026-05-07 13:24:36.640 INFO  [main] com.example.bank.BankAccount - Account created: accountId=34F97E61, holder=Bad
+2026-05-07 13:24:36.640 ERROR [main] com.example.bank.BankAccount - Account creation rejected: negative initialBalance=-100.0 for holder=Bad
+2026-05-07 13:24:36.644 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.645 INFO  [main] com.example.bank.BankAccount - Account created: accountId=0D6F9EEE, holder=Alice
+2026-05-07 13:24:36.645 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=0D6F9EEE, balance=1000.0
+2026-05-07 13:24:36.646 INFO  [main] com.example.bank.BankAccount - Account created: accountId=FA163CD9, holder=Bob
+2026-05-07 13:24:36.646 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=FA163CD9, balance=200.0
+2026-05-07 13:24:36.655 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.657 INFO  [main] com.example.bank.BankAccount - Account created: accountId=6A49D61C, holder=Alice
+2026-05-07 13:24:36.657 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=6A49D61C, balance=1000.0
+2026-05-07 13:24:36.657 INFO  [main] com.example.bank.BankAccount - Account created: accountId=F1734F9F, holder=Bob
+2026-05-07 13:24:36.658 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=F1734F9F, balance=200.0
+2026-05-07 13:24:36.660 WARN  [main] com.example.bank.BankService - Transfer rejected: non-positive amount=0.0
+2026-05-07 13:24:36.664 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.665 INFO  [main] com.example.bank.BankAccount - Account created: accountId=9AE22165, holder=Alice
+2026-05-07 13:24:36.665 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=9AE22165, balance=1000.0
+2026-05-07 13:24:36.665 INFO  [main] com.example.bank.BankAccount - Account created: accountId=2DFAFCC2, holder=Bob
+2026-05-07 13:24:36.665 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=2DFAFCC2, balance=200.0
+2026-05-07 13:24:36.666 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=9AE22165, balance=1000.0
+2026-05-07 13:24:36.666 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=2DFAFCC2, balance=200.0
+2026-05-07 13:24:36.666 INFO  [main] com.example.bank.BankSystemTest - Test: transfer(300) from alice=1000.0 to bob=200.0
+2026-05-07 13:24:36.668 INFO  [main] com.example.bank.BankService - Transfer initiated: from=9AE22165, to=2DFAFCC2, amount=300.0
+2026-05-07 13:24:36.668 DEBUG [main] com.example.bank.Transaction - Transaction created: id=TX-E223F4, type=WITHDRAWAL, amount=300.0
+2026-05-07 13:24:36.669 INFO  [main] com.example.bank.BankAccount - Withdrawal OK: accountId=9AE22165, amount=300.0, newBalance=700.0
+2026-05-07 13:24:36.669 DEBUG [main] com.example.bank.BankAccount - Transaction recorded: [TX-E223F4] WITHDRAWAL   300.00  Withdrawal by Alice @ 2026-05-07T13:24:36.668701600
+2026-05-07 13:24:36.670 DEBUG [main] com.example.bank.Transaction - Transaction created: id=TX-B0E23E, type=DEPOSIT, amount=300.0
+2026-05-07 13:24:36.670 INFO  [main] com.example.bank.BankAccount - Deposit OK: accountId=2DFAFCC2, amount=300.0, newBalance=500.0
+2026-05-07 13:24:36.670 DEBUG [main] com.example.bank.BankAccount - Transaction recorded: [TX-B0E23E] DEPOSIT      300.00  Deposit by Bob @ 2026-05-07T13:24:36.670221200
+2026-05-07 13:24:36.670 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=9AE22165, balance=700.0
+2026-05-07 13:24:36.670 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=2DFAFCC2, balance=500.0
+2026-05-07 13:24:36.671 INFO  [main] com.example.bank.BankService - Transfer complete: from=9AE22165 newBalance=700.0, to=2DFAFCC2 newBalance=500.0
+2026-05-07 13:24:36.671 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=9AE22165, balance=700.0
+2026-05-07 13:24:36.677 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=2DFAFCC2, balance=500.0
+2026-05-07 13:24:36.678 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=9AE22165, balance=700.0
+2026-05-07 13:24:36.678 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=2DFAFCC2, balance=500.0
+2026-05-07 13:24:36.678 INFO  [main] com.example.bank.BankSystemTest - Test PASSED: alice=700.0, bob=500.0
+2026-05-07 13:24:36.681 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.682 INFO  [main] com.example.bank.BankAccount - Account created: accountId=ED7701F4, holder=Alice
+2026-05-07 13:24:36.682 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=ED7701F4, balance=1000.0
+2026-05-07 13:24:36.682 INFO  [main] com.example.bank.BankAccount - Account created: accountId=E39A494F, holder=Bob
+2026-05-07 13:24:36.682 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=E39A494F, balance=200.0
+2026-05-07 13:24:36.683 INFO  [main] com.example.bank.BankService - Transfer initiated: from=ED7701F4, to=E39A494F, amount=9999.0
+2026-05-07 13:24:36.683 WARN  [main] com.example.bank.BankAccount - Insufficient funds: accountId=ED7701F4, requested=9999.0, available=1000.0
+2026-05-07 13:24:36.695 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.696 INFO  [main] com.example.bank.BankAccount - Account created: accountId=4A5A0AB3, holder=Alice
+2026-05-07 13:24:36.697 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=4A5A0AB3, balance=1000.0
+2026-05-07 13:24:36.697 INFO  [main] com.example.bank.BankAccount - Account created: accountId=1C23F92D, holder=Bob
+2026-05-07 13:24:36.697 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=1C23F92D, balance=200.0
+2026-05-07 13:24:36.698 WARN  [main] com.example.bank.BankAccount - Insufficient funds: accountId=4A5A0AB3, requested=9999.0, available=1000.0
+2026-05-07 13:24:36.702 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.702 INFO  [main] com.example.bank.BankAccount - Account created: accountId=14FE40AD, holder=Alice
+2026-05-07 13:24:36.702 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=14FE40AD, balance=1000.0
+2026-05-07 13:24:36.703 INFO  [main] com.example.bank.BankAccount - Account created: accountId=9EAC6693, holder=Bob
+2026-05-07 13:24:36.703 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=9EAC6693, balance=200.0
+2026-05-07 13:24:36.703 DEBUG [main] com.example.bank.Transaction - Transaction created: id=TX-974DD0, type=WITHDRAWAL, amount=400.0
+2026-05-07 13:24:36.703 INFO  [main] com.example.bank.BankAccount - Withdrawal OK: accountId=14FE40AD, amount=400.0, newBalance=600.0
+2026-05-07 13:24:36.703 DEBUG [main] com.example.bank.BankAccount - Transaction recorded: [TX-974DD0] WITHDRAWAL   400.00  Withdrawal by Alice @ 2026-05-07T13:24:36.703454200
+2026-05-07 13:24:36.703 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=14FE40AD, balance=600.0
+2026-05-07 13:24:36.707 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.708 INFO  [main] com.example.bank.BankAccount - Account created: accountId=C46F3F55, holder=Alice
+2026-05-07 13:24:36.708 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=C46F3F55, balance=1000.0
+2026-05-07 13:24:36.709 INFO  [main] com.example.bank.BankAccount - Account created: accountId=D90ED3F4, holder=Bob
+2026-05-07 13:24:36.709 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=D90ED3F4, balance=200.0
+2026-05-07 13:24:36.710 WARN  [main] com.example.bank.BankAccount - Withdrawal rejected: non-positive amount=0.0, accountId=C46F3F55
+2026-05-07 13:24:36.713 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.713 INFO  [main] com.example.bank.BankAccount - Account created: accountId=B6987E08, holder=Alice
+2026-05-07 13:24:36.713 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=B6987E08, balance=1000.0
+2026-05-07 13:24:36.713 INFO  [main] com.example.bank.BankAccount - Account created: accountId=B237DB41, holder=Bob
+2026-05-07 13:24:36.713 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=B237DB41, balance=200.0
+2026-05-07 13:24:36.716 DEBUG [main] com.example.bank.Transaction - Transaction created: id=TX-D6172A, type=WITHDRAWAL, amount=1000.0
+2026-05-07 13:24:36.716 INFO  [main] com.example.bank.BankAccount - Withdrawal OK: accountId=B6987E08, amount=1000.0, newBalance=0.0
+2026-05-07 13:24:36.716 DEBUG [main] com.example.bank.BankAccount - Transaction recorded: [TX-D6172A] WITHDRAWAL  1000.00  Withdrawal by Alice @ 2026-05-07T13:24:36.716068500
+2026-05-07 13:24:36.716 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=B6987E08, balance=0.0
+2026-05-07 13:24:36.723 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.724 INFO  [main] com.example.bank.BankAccount - Account created: accountId=F4322716, holder=Alice
+2026-05-07 13:24:36.724 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=F4322716, balance=1000.0
+2026-05-07 13:24:36.726 INFO  [main] com.example.bank.BankAccount - Account created: accountId=593D4D40, holder=Bob
+2026-05-07 13:24:36.726 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=593D4D40, balance=200.0
+2026-05-07 13:24:36.728 WARN  [main] com.example.bank.BankAccount - Deposit rejected: non-positive amount=0.0, accountId=F4322716
+2026-05-07 13:24:36.731 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.732 INFO  [main] com.example.bank.BankAccount - Account created: accountId=BC75E9C4, holder=Alice
+2026-05-07 13:24:36.732 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=BC75E9C4, balance=1000.0
+2026-05-07 13:24:36.732 INFO  [main] com.example.bank.BankAccount - Account created: accountId=2B0E3AA7, holder=Bob
+2026-05-07 13:24:36.732 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=2B0E3AA7, balance=200.0
+2026-05-07 13:24:36.732 INFO  [main] com.example.bank.BankSystemTest - Test: deposit(500) on account with balance=1000
+2026-05-07 13:24:36.733 DEBUG [main] com.example.bank.Transaction - Transaction created: id=TX-84B363, type=DEPOSIT, amount=500.0
+2026-05-07 13:24:36.733 INFO  [main] com.example.bank.BankAccount - Deposit OK: accountId=BC75E9C4, amount=500.0, newBalance=1500.0
+2026-05-07 13:24:36.733 DEBUG [main] com.example.bank.BankAccount - Transaction recorded: [TX-84B363] DEPOSIT      500.00  Deposit by Alice @ 2026-05-07T13:24:36.733557800
+2026-05-07 13:24:36.734 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=BC75E9C4, balance=1500.0
+2026-05-07 13:24:36.734 DEBUG [main] com.example.bank.BankAccount - Balance queried: accountId=BC75E9C4, balance=1500.0
+2026-05-07 13:24:36.734 INFO  [main] com.example.bank.BankSystemTest - Test PASSED: newBalance=1500.0
+2026-05-07 13:24:36.735 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.736 INFO  [main] com.example.bank.BankAccount - Account created: accountId=FDACE489, holder=Alice
+2026-05-07 13:24:36.736 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=FDACE489, balance=1000.0
+2026-05-07 13:24:36.737 INFO  [main] com.example.bank.BankAccount - Account created: accountId=4B9D579A, holder=Bob
+2026-05-07 13:24:36.737 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=4B9D579A, balance=200.0
+2026-05-07 13:24:36.738 DEBUG [main] com.example.bank.Transaction - Transaction created: id=TX-FADCA5, type=DEPOSIT, amount=300.0
+2026-05-07 13:24:36.738 INFO  [main] com.example.bank.BankAccount - Deposit OK: accountId=FDACE489, amount=300.0, newBalance=1300.0
+2026-05-07 13:24:36.738 DEBUG [main] com.example.bank.BankAccount - Transaction recorded: [TX-FADCA5] DEPOSIT      300.00  Deposit by Alice @ 2026-05-07T13:24:36.738004200
+2026-05-07 13:24:36.740 DEBUG [main] com.example.bank.BankSystemTest - Setting up test fixtures...
+2026-05-07 13:24:36.741 INFO  [main] com.example.bank.BankAccount - Account created: accountId=D9742CED, holder=Alice
+2026-05-07 13:24:36.741 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=D9742CED, balance=1000.0
+2026-05-07 13:24:36.742 INFO  [main] com.example.bank.BankAccount - Account created: accountId=4B920A9F, holder=Bob
+2026-05-07 13:24:36.742 INFO  [main] com.example.bank.BankAccount - Initial balance applied: accountId=4B920A9F, balance=200.0
+2026-05-07 13:24:36.742 WARN  [main] com.example.bank.BankAccount - Deposit rejected: non-positive amount=-100.0, accountId=D9742CED

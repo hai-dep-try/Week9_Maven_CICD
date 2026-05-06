@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--
+    ╔══════════════════════════════════════════════════════════════════════╗
+    ║  logback.xml – BankSystem Professional Logging Configuration        ║
+    ║                                                                      ║
+    ║  Two appenders:                                                      ║
+    ║    CONSOLE – colored output to stdout (for developer terminal)       ║
+    ║    FILE    – plain text to logs/bank.log (persisted, for ops/audit)  ║
+    ║                                                                      ║
+    ║  Log format:                                                         ║
+    ║    [timestamp] [level] [thread] [logger] - message                  ║
+    ║    Example:                                                          ║
+    ║    13:21:05.432 INFO  [main] c.e.bank.BankAccount - Deposit OK: ...  ║
+    ╚══════════════════════════════════════════════════════════════════════╝
+    -->
+
+    <!-- ── Appender 1: Console (colored) ──────────────────────────────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <!--
+            PatternLayoutEncoder: controls the format of each log line.
+            %d{HH:mm:ss.SSS}  – timestamp (hours:minutes:seconds.milliseconds)
+            %-5level           – log level, left-padded to 5 chars (INFO , WARN )
+            [%thread]          – thread name (useful for concurrent apps)
+            %logger{30}        – logger name, abbreviated to 30 chars
+                                 (e.g. com.example.bank.BankAccount → c.e.bank.BankAccount)
+            %msg               – the actual log message
+            %n                 – platform-specific newline
+            %highlight(...)    – wraps the text in ANSI color codes:
+                                   ERROR = red, WARN = yellow,
+                                   INFO = default, DEBUG = cyan
+        -->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{30}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── Appender 2: Rolling File ───────────────────────────────────── -->
+    <!--
+        RollingFileAppender: writes to a file; automatically rotates
+        when the file reaches maxFileSize or at the start of a new day.
+
+        Why file logging?
+        - Console output is VOLATILE: lost when the terminal closes.
+        - File logs are PERSISTENT: can be reviewed hours/days later.
+        - Essential for production troubleshooting, auditing, and
+          compliance requirements.
+    -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- Active log file path (relative to working directory = project root) -->
+        <file>logs/bank.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--
+                fileNamePattern: name pattern for rotated (archived) log files.
+                %d{yyyy-MM-dd} – date the file was rotated
+                %i             – index within the same day (0, 1, 2, ...)
+            -->
+            <fileNamePattern>logs/bank.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- Rotate when the file reaches 10 MB -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- Keep rotated files for 30 days, then auto-delete -->
+            <maxHistory>30</maxHistory>
+            <!-- Hard cap on total log storage (all rotated files combined) -->
+            <totalSizeCap>200MB</totalSizeCap>
+        </rollingPolicy>
+
+        <!--
+            Plain (no-color) pattern for file output.
+            ANSI codes render as garbage in most text editors / log viewers.
+        -->
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!--
+        Root logger level = DEBUG during development.
+        In production, change to INFO to reduce noise and I/O.
+
+        All log statements flow to BOTH appenders simultaneously.
+    -->
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <!--
+        Optional: silence noisy third-party loggers.
+        Uncomment in production to reduce log volume.
+    -->
+    <!-- <logger name="ch.qos.logback" level="WARN"/> -->
+
+</configuration>
