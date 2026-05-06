@@ -1,0 +1,118 @@
+# ============================================================
+# ci.yml – GitHub Actions CI Workflow for MathUtils-CI
+#
+# Triggers:
+#   push        → any branch (validates every commit)
+#   pull_request → targets main branch (gate before merge)
+#
+# Jobs:
+#   build → compile, test, package, upload JAR artifact
+# ============================================================
+
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "**" ]          # trigger on every branch push
+  pull_request:
+    branches: [ "main" ]        # gate PRs that target main
+
+# Cancel in-progress runs for the same ref to save CI minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Job: build
+  # Runs on the latest Ubuntu runner (free for public repos)
+  # ──────────────────────────────────────────────────────────
+  build:
+    name: Build, Test & Package
+    runs-on: ubuntu-latest
+
+    # All `run` steps will execute inside Bai9_3/
+    # so Maven can find pom.xml without explicit --file flags
+    defaults:
+      run:
+        working-directory: Bai9_3
+
+    steps:
+      # ── Step 1: Checkout ──────────────────────────────────
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        # Checks out the full repository under $GITHUB_WORKSPACE
+
+      # ── Step 2: Set up JDK ────────────────────────────────
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'   # Eclipse Temurin (formerly AdoptOpenJDK)
+          cache: 'maven'            # caches ~/.m2 between runs (speeds up CI)
+
+      # ── Step 3: Show environment info (useful for debug) ──
+      - name: Print environment info
+        run: |
+          echo "==== Java version ===="
+          java -version
+          echo "==== Maven version ===="
+          mvn -version
+          echo "==== Project structure ===="
+          find src -name "*.java" | sort
+
+      # ── Step 4: Compile ───────────────────────────────────
+      - name: Compile (mvn compile)
+        run: mvn compile -B
+        # -B = batch mode: no color codes, cleaner CI logs
+
+      # ── Step 5: Run unit tests ────────────────────────────
+      - name: Run unit tests (mvn test)
+        run: mvn test -B
+        # Surefire 3.x discovers JUnit Jupiter @Test automatically.
+        # Any test failure here causes a non-zero exit → job fails.
+
+      # ── Step 6: Upload test results (always, for debug) ───
+      - name: Upload Surefire test reports
+        if: always()              # run even when tests fail (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: Bai9_3/target/surefire-reports/
+          retention-days: 7
+
+      # ── Step 7: Package into JAR ──────────────────────────
+      - name: Package JAR (mvn package -DskipTests)
+        run: mvn package -B -DskipTests
+        # -DskipTests: tests already ran in step 5; skip here to save time.
+        # Produces: target/MathUtils-CI.jar (finalName set in pom.xml)
+
+      # ── Step 8: Verify JAR exists ─────────────────────────
+      - name: Verify JAR was produced
+        run: |
+          echo "==== Contents of target/ ===="
+          ls -lh target/*.jar
+          echo "==== JAR manifest ===="
+          unzip -p target/MathUtils-CI.jar META-INF/MANIFEST.MF
+
+      # ── Step 9: Upload JAR as build artifact ──────────────
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MathUtils-CI-jar            # name shown in GitHub Actions UI
+          path: Bai9_3/target/MathUtils-CI.jar
+          retention-days: 30               # keep artifact for 30 days
+          if-no-files-found: error         # fail if JAR is missing
+
+      # ── Step 10: Summary ──────────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          JAR_SIZE=$(du -h target/MathUtils-CI.jar 2>/dev/null | cut -f1 || echo "N/A")
+          echo "| JAR size | $JAR_SIZE |" >> $GITHUB_STEP_SUMMARY

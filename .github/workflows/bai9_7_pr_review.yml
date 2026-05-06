@@ -1,0 +1,150 @@
+# ============================================================
+# pr-review.yml – Automated PR Code Review Bot
+#
+# Trigger: pull_request targeting main branch
+#
+# What this workflow does:
+#   Job 1 (checkstyle-review): Posts INLINE COMMENTS on PR diff
+#     → Uses dbelyaev/action-checkstyle (reviewdog-based)
+#     → Comments appear directly on offending lines in GitHub PR UI
+#
+#   Job 2 (test-and-build): Compiles + tests + checkstyle:check
+#     → This is the REQUIRED status check for Branch Protection
+#     → If it fails, Merge button stays LOCKED
+#
+# Branch Protection Rules (set in GitHub UI – see README.md):
+#   Settings → Branches → Add rule → Branch name: main
+#   ✅ Require status checks: "Checkstyle Review", "Test & Build"
+#   ✅ Require branches to be up to date before merging
+#   ✅ Do not allow bypassing the above settings
+# ============================================================
+
+name: PR Automated Code Review
+
+on:
+  pull_request:
+    branches: [ "main" ]   # only PRs targeting main trigger this
+  push:
+    branches: [ "main" ]   # also runs on direct push (post-merge validation)
+
+# Required permissions for the bot to post PR review comments
+permissions:
+  contents: read
+  pull-requests: write     # allows posting review comments on PR diff
+  checks: write            # allows creating check runs (status checks)
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Job 1: Inline Checkstyle review comments on PR diff
+  # Uses: dbelyaev/action-checkstyle (wraps reviewdog)
+  # ──────────────────────────────────────────────────────────
+  checkstyle-review:
+    name: "Checkstyle Review"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Bai9_7
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # ── Inline Checkstyle comments on changed lines ───────
+      # dbelyaev/action-checkstyle:
+      #   - Downloads Checkstyle 10.x JAR automatically
+      #   - Runs it against all Java files in the PR
+      #   - Posts violations as GitHub PR review comments
+      #     (appears on the specific diff line that violates the rule)
+      #   - reporter: github-pr-review → comments visible in "Files changed" tab
+      #   - level: error → only ERROR-level violations trigger comments
+      #   - fail_on_error: true → this job fails if any violation found
+      - name: "Run Checkstyle + post inline PR comments"
+        uses: dbelyaev/action-checkstyle@v1.5.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          checkstyle_config: Bai9_7/checkstyle.xml
+          reporter: github-pr-review
+          level: error
+          fail_on_error: true
+          workdir: Bai9_7/src/main/java
+          # checkstyle_version: 10.12.3  # optional: pin Checkstyle version
+
+  # ──────────────────────────────────────────────────────────
+  # Job 2: Full build + test (required for Branch Protection)
+  # If this job fails → Merge button is LOCKED
+  # ──────────────────────────────────────────────────────────
+  test-and-build:
+    name: "Test & Build"
+    runs-on: ubuntu-latest
+    needs: []              # runs in parallel with checkstyle-review
+
+    defaults:
+      run:
+        working-directory: Bai9_7
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # ── Checkstyle check (build-breaking) ─────────────────
+      # This runs `mvn checkstyle:check` (bound to validate phase).
+      # On any violation: exit code 1 → job FAILS → Merge LOCKED.
+      # The dbelyaev action above posts human-readable inline comments;
+      # this step is the hard gate that blocks the merge button.
+      - name: "Checkstyle check (merge gate)"
+        run: |
+          echo ">>> Running Checkstyle. Violations = build failure."
+          mvn checkstyle:check -B -f pom.xml
+          echo ">>> 0 violations. Checkstyle gate PASSED."
+
+      # ── Compile ───────────────────────────────────────────
+      - name: Compile
+        run: mvn compile -B
+
+      # ── Unit Tests ────────────────────────────────────────
+      # Test failure = job fails = Merge LOCKED
+      - name: "Run unit tests"
+        run: mvn test -B
+
+      # ── Upload test results (always) ──────────────────────
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-pr${{ github.event.pull_request.number }}
+          path: Bai9_7/target/surefire-reports/
+          retention-days: 7
+
+      # ── Job summary ───────────────────────────────────────
+      - name: Write PR review summary
+        if: always()
+        run: |
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "## PR Review Result" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$PR_NUM" ]; then
+            echo "**PR #${PR_NUM}**: ${PR_TITLE}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Checkstyle | See job result above |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | See job result above |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> Branch Protection requires BOTH checks to pass before merging." >> $GITHUB_STEP_SUMMARY
