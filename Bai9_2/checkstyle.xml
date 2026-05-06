@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+    BankSystem Checkstyle Configuration
+    Based on: Sun Code Conventions
+    https://www.oracle.com/java/technologies/javase/codeconventions-contents.html
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <!-- [1] No tab characters anywhere in source files -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <!-- [2] Every file must end with a newline -->
+    <module name="NewlineAtEndOfFile"/>
+
+    <!-- [3] Max 120 characters per line (Sun: 80, relaxed here) -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+    </module>
+
+    <!-- [9] No trailing whitespace at end of lines -->
+    <module name="RegexpSingleline">
+        <property name="format" value="\s+$"/>
+        <property name="message" value="Trailing whitespace not allowed."/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <!-- ══════════════════════════════════════════════
+             NAMING CONVENTIONS
+             ══════════════════════════════════════════════ -->
+
+        <!-- Classes & interfaces: PascalCase -->
+        <module name="TypeName"/>
+
+        <!-- Instance/static non-final fields: camelCase -->
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!-- Methods: camelCase, must not start with uppercase -->
+        <module name="MethodName"/>
+
+        <!-- Constants (static final): UPPER_SNAKE_CASE -->
+        <module name="ConstantName">
+            <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+
+        <!-- Local variables: camelCase -->
+        <module name="LocalVariableName"/>
+
+        <!-- Parameters: camelCase -->
+        <module name="ParameterName"/>
+
+        <!-- ══════════════════════════════════════════════
+             INDENTATION  (Sun: 4-space)
+             ══════════════════════════════════════════════ -->
+
+        <module name="Indentation">
+            <property name="basicOffset" value="4"/>
+            <property name="braceAdjustment" value="0"/>
+            <property name="caseIndent" value="4"/>
+            <property name="throwsIndent" value="8"/>
+            <property name="lineWrappingIndentation" value="8"/>
+            <property name="arrayInitIndent" value="4"/>
+        </module>
+
+        <!-- ══════════════════════════════════════════════
+             BRACES
+             ══════════════════════════════════════════════ -->
+
+        <!-- [4] Always use braces, even for single-statement blocks -->
+        <module name="NeedBraces"/>
+
+        <!-- Opening brace on same line as declaration (K&R style) -->
+        <module name="LeftCurly"/>
+
+        <!-- Closing brace on its own line -->
+        <module name="RightCurly"/>
+
+        <!-- ══════════════════════════════════════════════
+             WHITESPACE
+             ══════════════════════════════════════════════ -->
+
+        <!-- [5] Spaces around operators, keywords, etc. -->
+        <module name="WhitespaceAround">
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyTypes" value="true"/>
+            <property name="allowEmptyLoops" value="true"/>
+        </module>
+
+        <!-- Space after commas, semicolons, and type casts -->
+        <module name="WhitespaceAfter"/>
+
+        <!-- No space before commas/semicolons -->
+        <module name="NoWhitespaceBefore"/>
+
+        <!-- ══════════════════════════════════════════════
+             BLANK LINES
+             ══════════════════════════════════════════════ -->
+
+        <!-- [6] Blank line between class members (fields, methods, etc.) -->
+        <module name="EmptyLineSeparator">
+            <property name="allowNoEmptyLineBetweenFields" value="true"/>
+            <property name="allowMultipleEmptyLines" value="false"/>
+        </module>
+
+        <!-- ══════════════════════════════════════════════
+             JAVADOC
+             ══════════════════════════════════════════════ -->
+
+        <!-- [7] Public methods must have Javadoc -->
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="public"/>
+            <property name="allowMissingPropertyJavadoc" value="true"/>
+        </module>
+
+        <!-- Javadoc must be well-formed (valid tags) -->
+        <module name="JavadocMethod">
+            <property name="accessModifiers" value="public"/>
+            <property name="allowMissingParamTags" value="false"/>
+            <property name="allowMissingReturnTag" value="false"/>
+        </module>
+
+        <!-- Class-level Javadoc required -->
+        <module name="MissingJavadocType">
+            <property name="scope" value="public"/>
+        </module>
+
+        <!-- ══════════════════════════════════════════════
+             DESIGN / MISC
+             ══════════════════════════════════════════════ -->
+
+        <!-- [8] Fields must be private (enforce encapsulation) -->
+        <module name="VisibilityModifier">
+            <property name="packageAllowed" value="false"/>
+            <property name="protectedAllowed" value="true"/>
+            <property name="ignoreAnnotationCanonicalNames"
+                value="org.junit.jupiter.api.extension.RegisterExtension"/>
+        </module>
+
+        <!-- Use L not l for long literals (e.g. 100L not 100l) -->
+        <module name="UpperEll"/>
+
+        <!-- Modifiers must follow Java Language Spec order -->
+        <module name="ModifierOrder"/>
+
+        <!-- Empty catch blocks are not allowed -->
+        <module name="EmptyCatchBlock"/>
+
+        <!-- Avoid redundant imports -->
+        <module name="RedundantImport"/>
+
+        <!-- Unused imports flagged -->
+        <module name="UnusedImports"/>
+
+    </module>
+</module>
