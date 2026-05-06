@@ -1,0 +1,99 @@
+# ============================================================
+# ci-no-cache.yml – BASELINE: No dependency caching
+#
+# Every run downloads ALL Maven dependencies from Maven Central.
+# This is the "before" state for timing comparison.
+#
+# Expected duration: 2–4 minutes (depending on network speed)
+# Run #1 time: _______  (fill in from GitHub Actions UI)
+# Run #2 time: _______  (fill in – same, no improvement)
+# ============================================================
+
+name: "[BASELINE] CI Without Cache"
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-no-cache:
+    name: "Build (NO cache) – push #${{ github.run_number }}"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Bai9_6
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── NO cache parameter here ──────────────────────────
+      - name: "Set up JDK 17 (NO Maven cache)"
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          # cache: 'maven'  <── intentionally OMITTED
+          #
+          # Without this parameter:
+          # - ~/.m2/repository is always EMPTY at job start
+          # - Maven MUST download every dependency from Maven Central
+          # - Network requests: slf4j, logback, junit-jupiter, jacoco,
+          #   surefire, compiler-plugin, jar-plugin... (50–100+ JARs)
+          # - Time spent downloading: ~60–180 seconds
+
+      # ── Record start time ────────────────────────────────
+      - name: Record start time
+        id: timer_start
+        run: echo "START=$(date +%s)" >> $GITHUB_OUTPUT
+
+      # ── Show ~/.m2 BEFORE Maven runs (always empty) ──────
+      - name: "Inspect ~/.m2 BEFORE build (proves no cache)"
+        run: |
+          echo "===== ~/.m2/repository contents BEFORE build ====="
+          du -sh ~/.m2/repository 2>/dev/null || echo "~/.m2/repository does not exist yet"
+          echo "===== File count ====="
+          find ~/.m2/repository -name "*.jar" 2>/dev/null | wc -l || echo "0 JARs"
+          echo ""
+          echo ">>> Without cache: 0 JARs present. Maven will download everything."
+
+      # ── Run build (downloads all deps from scratch) ──────
+      - name: "mvn verify (all downloads from Maven Central)"
+        run: mvn verify -B
+        # Every 'Downloading from central:' line in the log = a network request
+        # Count them to compare with the cached run
+
+      # ── Show ~/.m2 AFTER Maven runs ──────────────────────
+      - name: "Inspect ~/.m2 AFTER build (show what was downloaded)"
+        if: always()
+        run: |
+          echo "===== ~/.m2/repository contents AFTER build ====="
+          du -sh ~/.m2/repository
+          echo "===== JAR count ====="
+          JAR_COUNT=$(find ~/.m2/repository -name "*.jar" | wc -l)
+          echo "$JAR_COUNT JARs downloaded from Maven Central this run"
+          echo ""
+          echo ">>> KEY OBSERVATION: All $JAR_COUNT JARs were downloaded"
+          echo "    This will happen EVERY run without caching."
+
+      # ── Record end time and calculate duration ────────────
+      - name: Calculate and record build duration
+        if: always()
+        run: |
+          END=$(date +%s)
+          START=${{ steps.timer_start.outputs.START }}
+          DURATION=$((END - START))
+          echo "====================================="
+          echo "  [NO CACHE] Build duration: ${DURATION}s"
+          echo "  Run number: ${{ github.run_number }}"
+          echo "====================================="
+          # Write to step summary
+          echo "## [NO CACHE] Run #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Cache status | **MISS** (no cache configured) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build time | **${DURATION} seconds** |" >> $GITHUB_STEP_SUMMARY
+          echo "| All deps downloaded | YES (from Maven Central) |" >> $GITHUB_STEP_SUMMARY
